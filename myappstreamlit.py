@@ -3,7 +3,7 @@ from PIL import Image
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
+#import cv2
 from skimage.io import imread, imshow
 from skimage.transform import resize
 import tensorflow as tf
@@ -28,7 +28,7 @@ def LoadImage(path_file,width=IMG_WIDTH, height=IMG_HEIGHT,channels=IMG_CHANNELS
 def getSegmentationArr(image_path, classes=8, width=IMG_WIDTH, height=IMG_HEIGHT,cut_bottom=200):
     img = imread(image_path) 
     img = img[:-cut_bottom, :]
-    img_mask=cv2.resize(img, (width, height))
+    img_mask=resize(img, (width, height))
     img_mask_result=np.zeros(shape=(width, height, classes), dtype=np.uint8)
     img_mask_result[:,:,0][img_mask==2]=1  # ---car hood
     img_mask_result[:,:,1][img_mask==7]=1  # road
