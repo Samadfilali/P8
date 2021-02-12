@@ -7,6 +7,7 @@ import cv2
 from skimage.io import imread, imshow
 from skimage.transform import resize
 import tensorflow as tf
+import os
 
 IMG_WIDTH = 128
 IMG_HEIGHT = 128
@@ -14,6 +15,17 @@ IMG_CHANNELS = 3
 
 path_val_seg = './input/gtFine/val/frankfurt/'
 path_val_real= './input/leftImg8bit/val/frankfurt/'
+
+
+@st.cache
+def load_model() :
+    mdl = tf.keras.models.load_model('./model_v3_unet')
+    return mdl
+
+def file_selector(folder_path='./input/leftImg8bit/val/frankfurt/'):
+    filenames = os.listdir(folder_path)
+    selected_filename = st.selectbox('Select a file', filenames)
+    return os.path.join(folder_path, selected_filename)
 
 
 
@@ -75,23 +87,19 @@ En entrée, cette App reçoit une image et affiche les masques réel et prédit
 
 # st.header('Identifying digits from Images')
 st.subheader('Please upload an image to segment')
-file_uploaded = st.file_uploader("Select an image for Classification", type="png")
-
-image = imread(file_uploaded)
+# liste déroulante pour choisir une image
+filename = file_selector()
+image = imread(filename)
 st.image(image, use_column_width=True)
 
-
-
 if st.button('Predict'):
-    model = tf.keras.models.load_model('./model_v3_unet')
-    # récupérer le nom du fichier
-    name_file=file_uploaded.name
-    # affichage de  la segmentation réelle
+    model = load_model()
+    # Affichage du masque réel
     st.write("""
              Le masque réel
              """)
-    path_file_seg=name_file.replace("leftImg8bit","gtFine_labelIds")
-    path_file_seg= path_val_seg+path_file_seg
+    path_file_seg=filename.replace("leftImg8bit.png","gtFine_labelIds.png")
+    path_file_seg=path_file_seg.replace("/leftImg8bit/","/gtFine/")
     image=getSegmentationArr(path_file_seg)
     image=LayersToRGBImage(image)
     st.image(image, use_column_width=True)
@@ -100,8 +108,7 @@ if st.button('Predict'):
     st.write("""
              Le masque prédit
              """)
-    path_file_img=path_val_real+name_file
-    test_im= LoadImage(path_file_img,width=IMG_WIDTH, height=IMG_HEIGHT,channels=IMG_CHANNELS)
+    test_im= LoadImage(filename,width=IMG_WIDTH, height=IMG_HEIGHT,channels=IMG_CHANNELS)
     x = np.expand_dims(test_im, axis=0)
     y_pred=model.predict(x, verbose=1)
     y_pred_unit8 = (y_pred > 0.2).astype(np.uint8)
